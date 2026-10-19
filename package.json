@@ -1,0 +1,9 @@
+{
+  "name": "pi-chico",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Agente de programación sin dependencias para llama-server (macOS/Linux)",
+  "engines": { "node": ">=22" },
+  "scripts": { "start": "node agent.mjs" }
+}

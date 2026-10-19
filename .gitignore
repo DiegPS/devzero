@@ -1,0 +1,5 @@
+.pi-chico/
+node_modules/
+.env
+.env.*
+llama.log
