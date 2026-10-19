@@ -108,11 +108,13 @@ const toolSpecs = {
     async run(ws, { path: name, old, replacement }, signal) {
       const file = await ws.resolve(name);
       const previous = await fs.readFile(file, 'utf8');
-      if (!old || !previous.includes(old)) throw Error('Texto old no encontrado. Usa read y copia las lineas exactas.');
-      if (previous.indexOf(old) !== previous.lastIndexOf(old)) throw Error('Coincidencia ambigua; da mas contexto.');
-      const preview = `ANTES:\n${clip(old, 1000)}\nDESPUES:\n${clip(replacement, 1000)}`;
+      const target = previous.includes(old) ? old : old?.trim();
+      const next = target === old ? replacement : replacement.trim();
+      if (!target || !previous.includes(target)) throw Error('Texto old no encontrado en el archivo.');
+      if (previous.indexOf(target) !== previous.lastIndexOf(target)) throw Error('Coincidencia ambigua; incluye mas lineas en old.');
+      const preview = `ANTES:\n${clip(target, 1000)}\nDESPUES:\n${clip(next, 1000)}`;
       if (!await ws.approve(`Editar ${name}:\n${preview}`, signal)) throw Error('Cambio no autorizado.');
-      await fs.writeFile(file, previous.replace(old, () => replacement), 'utf8');
+      await fs.writeFile(file, previous.replace(target, () => next), 'utf8');
       return `Archivo editado: ${name}`;
     },
   },
@@ -242,7 +244,7 @@ export class Workspace {
 export function systemMessage(root) {
   return {
     role: 'system',
-    content: `Eres Pi-Chico, agente de programacion en ${root}. Responde en espanol. Usa siempre read para explorar (con path .) y leer archivos antes de modificar, nunca bash. En edit, old debe ser copia exacta de las lineas leidas con read. Agrega comandos en commands y herramientas en toolSpecs, sin expresiones regulares.`,
+    content: `Eres Pi-Chico, agente de programacion en ${root}. Responde en espanol. Si te piden mejorar el agente o agregar comandos/herramientas, lee directamente agent.mjs con read. Para explorar otros archivos usa read (nunca bash). Lee siempre el archivo con read antes de usar edit, y pon en old las lineas exactas a cambiar. En agent.mjs: usa async/await con fs (ej. await fs.readFile, await fs.readdir(dir, { recursive: true })), en toolSpecs usa str(), int(), await ws.resolve() y clip(), y en commands cada turno de messages inicia en role="user" (usa while para deshacer hasta user conservando messages[0]). Escribe JavaScript simple en ASCII sin expresiones regulares.`,
   };
 }
 
