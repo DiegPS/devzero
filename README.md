@@ -48,14 +48,12 @@ node agent.mjs --host http://127.0.0.1:8081 --prompt "Lee package.json y resume 
 | `/load [nombre]` | Cargar sesión desde `~/.pi-chico/<nombre>.json`. |
 | `/exit` | Salir del agente. |
 
-## Prompt calibrado para automejora con Gemma 4 12B
+## Automejora con Gemma 4 12B
 
-Para pedirle a Gemma 4 12B que mejore `agent.mjs` con máxima precisión en `read` -> `edit`:
+Gracias a que `read` devuelve hasta 500 líneas exactas (sin prefijos por línea), `/help` se genera dinámicamente desde `Object.keys(commands)` y `systemMessage` guía el flujo `read` -> `edit`, puedes pedirle mejoras con prompts cortos y naturales sin indicar archivos ni números de línea:
 
 ```text
-Mejora agent.mjs agregando [FUNCIONALIDAD]:
-1. Usa read con path="agent.mjs", start=[LINEA_INICIO], lines=[CANTIDAD] para ver el bloque exacto ([commands / toolSpecs / runTask]).
-2. Usa edit en "agent.mjs" copiando en "old" las lineas exactas devueltas por read y colocando en "replacement" el bloque actualizado con:
-   [CODIGO_O_ESPECIFICACION_EXPLICITA]
-No uses expresiones regulares ni bash. Explica brevemente al terminar.
+Agregale un comando /status para ver el host y los tokens
+Agregale una herramienta search para buscar un texto dentro de un archivo y devolver las lineas que coincidan
+Agregale un comando /undo para borrar el ultimo turno
 ```

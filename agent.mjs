@@ -6,7 +6,7 @@ import { spawn } from 'node:child_process';
 import { createInterface } from 'node:readline';
 import { parseArgs } from 'node:util';
 
-const LIMIT = 16000;
+const LIMIT = 20000;
 const SECRETS = ['.env', 'id_rsa', 'id_ed25519', 'credentials', 'secret', '.pem', '.key'];
 
 const clip = (s, n = LIMIT) => s.length > n ? s.slice(0, n) + '\n[Salida truncada]' : s;
@@ -73,10 +73,10 @@ const int = description => ({ type: 'integer', description });
 
 const toolSpecs = {
   read: {
-    description: 'Leer archivo o listar directorio del proyecto.',
+    description: 'Leer archivo o listar directorio (usa path . para explorar).',
     properties: { path: str('Ruta relativa'), start: int('Linea inicial'), lines: int('Cantidad de lineas') },
     required: ['path'],
-    async run(ws, { path: name, start = 1, lines = 200 }) {
+    async run(ws, { path: name, start = 1, lines = 500 }) {
       const file = await ws.resolve(name);
       const stat = await fs.stat(file);
       if (stat.isDirectory()) {
@@ -85,7 +85,7 @@ const toolSpecs = {
       }
       const all = (await fs.readFile(file, 'utf8')).split('\n');
       const slice = all.slice(start - 1, start - 1 + lines).join('\n');
-      return clip(slice) + `\n[${all.length} lineas totales]`;
+      return clip(slice) + `\n[Lineas ${start}-${Math.min(all.length, start + lines - 1)} de ${all.length}]`;
     },
   },
   write: {
@@ -102,13 +102,13 @@ const toolSpecs = {
     },
   },
   edit: {
-    description: 'Reemplazar una coincidencia unica en un archivo con aprobacion.',
-    properties: { path: str('Archivo'), old: str('Texto buscado'), replacement: str('Texto nuevo') },
+    description: 'Reemplazar bloque exacto leido previamente con read.',
+    properties: { path: str('Archivo'), old: str('Copia exacta del bloque actual'), replacement: str('Bloque nuevo') },
     required: ['path', 'old', 'replacement'],
     async run(ws, { path: name, old, replacement }, signal) {
       const file = await ws.resolve(name);
       const previous = await fs.readFile(file, 'utf8');
-      if (!old || !previous.includes(old)) throw Error('Texto buscado no encontrado.');
+      if (!old || !previous.includes(old)) throw Error('Texto old no encontrado. Usa read y copia las lineas exactas.');
       if (previous.indexOf(old) !== previous.lastIndexOf(old)) throw Error('Coincidencia ambigua; da mas contexto.');
       const preview = `ANTES:\n${clip(old, 1000)}\nDESPUES:\n${clip(replacement, 1000)}`;
       if (!await ws.approve(`Editar ${name}:\n${preview}`, signal)) throw Error('Cambio no autorizado.');
@@ -242,7 +242,7 @@ export class Workspace {
 export function systemMessage(root) {
   return {
     role: 'system',
-    content: `Eres Pi-Chico, un agente de programacion minimalista. Responde en espanol. Proyecto: ${root}. Usa read, write, edit y bash (/bin/sh) para trabajar. Lee antes de modificar y explica el resultado al terminar.`,
+    content: `Eres Pi-Chico, agente de programacion en ${root}. Responde en espanol. Usa siempre read para explorar (con path .) y leer archivos antes de modificar, nunca bash. En edit, old debe ser copia exacta de las lineas leidas con read. Agrega comandos en commands y herramientas en toolSpecs, sin expresiones regulares.`,
   };
 }
 
@@ -291,7 +291,7 @@ export async function main() {
   let messages = [systemMessage(cfg.project)];
   const sessionDir = path.join(os.homedir(), '.pi-chico');
   const commands = {
-    '/help': () => console.log('\n  /clear   Vaciar historial\n  /tokens  Estimar tokens\n  /save    Guardar sesion\n  /load    Cargar sesion\n  /exit    Salir\n'),
+    '/help': () => console.log('Comandos: ' + Object.keys(commands).join(', ') + ', /exit'),
     '/clear': () => { messages = [systemMessage(cfg.project)]; },
     '/tokens': () => console.log(`~${tokens(messages)} tokens`),
     '/save': async name => {
