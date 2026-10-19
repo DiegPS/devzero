@@ -1,6 +1,6 @@
 # Pi-Chico
 
-Agente de programación de terminal para **macOS y Linux** con Node.js 22+, ES Modules y **cero dependencias npm**. Todo el núcleo está en `agent.mjs` (**341 líneas**, 100 % ASCII puro y **cero expresiones regulares**), diseñado para poder escribirse a mano fácilmente y mejorarse a sí mismo usando **llama-server** (llama.cpp / ik_llama.cpp) con streaming SSE y tool calling estructurado.
+Agente de programación de terminal para **macOS y Linux** con Node.js 22+, ES Modules y **cero dependencias npm**. Todo el núcleo está en `agent.mjs` (**164 líneas**, 100 % ASCII puro y **cero expresiones regulares**), diseñado para poder escribirse a mano fácilmente y mejorarse a sí mismo usando **llama-server** (llama.cpp / ik_llama.cpp) con streaming SSE y tool calling estructurado.
 
 ## Inicio rápido
 
@@ -12,15 +12,14 @@ llama-server -m gemma.gguf --jinja --host 127.0.0.1 --port 8081
 
 # Con MTP (Multi-Token Prediction) y cache KV q8_0
 llama-server -m gemma.gguf -md mtp.gguf --spec-type mtp:n_max=3,p_min=0.0 \
-  --ctx-size 8192 -ctk q8_0 -ctv q8_0 -ngl 44 -ngld 99 --jinja --port 8081
+  --ctx-size 8192 -ctk q8_0 -ctv q8_0 -ngl 38 -ngld 99 --jinja --port 8081
 ```
 
 2. Ejecuta Pi-Chico:
 
 ```sh
-node agent.mjs                                           # http://127.0.0.1:8080, proyecto = directorio actual
-node agent.mjs --host http://127.0.0.1:8081 --project ~/mi-proyecto
-node agent.mjs --host http://127.0.0.1:8081 --prompt "Lee package.json y resume el proyecto"
+node agent.mjs                                      # http://127.0.0.1:8081, directorio actual
+node agent.mjs http://127.0.0.1:8081 ~/mi-proyecto
 ```
 
 ## Arquitectura
